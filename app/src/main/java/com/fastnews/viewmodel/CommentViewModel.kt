@@ -6,9 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.fastnews.mechanism.Coroutines
 import com.fastnews.repository.CommentRepository
-import com.fastnews.repository.PostRepository
 import com.fastnews.service.model.CommentData
-import com.fastnews.service.model.PostData
 
 class CommentViewModel : ViewModel() {
 
