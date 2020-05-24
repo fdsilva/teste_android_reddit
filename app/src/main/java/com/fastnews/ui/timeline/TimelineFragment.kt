@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
+import androidx.paging.PagedList
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fastnews.R
@@ -19,7 +20,6 @@ import com.fastnews.ui.detail.DetailFragment.Companion.KEY_POST
 import com.fastnews.viewmodel.PostViewModel
 import kotlinx.android.synthetic.main.fragment_timeline.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
-
 
 class TimelineFragment : Fragment() {
     private val viewModel by viewModel<PostViewModel>()
@@ -39,6 +39,8 @@ class TimelineFragment : Fragment() {
         buildActionBar()
         buildTimeline()
         verifyConnectionState()
+        setupObservables()
+
     }
 
     private fun verifyConnectionState() {
@@ -46,7 +48,7 @@ class TimelineFragment : Fragment() {
             if (VerifyNetworkInfo.isConnected(it!!)) {
                 hideNoConnectionState()
                 showProgress()
-                fetchTimeline()
+                viewModel.getPosts()
             } else {
                 hideProgress()
                 showNoConnectionState()
@@ -55,6 +57,17 @@ class TimelineFragment : Fragment() {
                     verifyConnectionState()
                 }
             }
+        }
+    }
+
+    private fun setupObservables() {
+        with(viewModel) {
+            posts.observe(viewLifecycleOwner,
+                Observer<PagedList<PostData>> {
+                adapter.submitList(it)
+                hideProgress()
+                showPosts()
+            })
         }
     }
 
@@ -73,16 +86,6 @@ class TimelineFragment : Fragment() {
         timeline_rv.layoutManager = LinearLayoutManager(context)
         timeline_rv.itemAnimator = DefaultItemAnimator()
         timeline_rv.adapter = adapter
-    }
-
-    private fun fetchTimeline() {
-        viewModel.getPosts("", 2).observe(this, Observer<List<PostData>> { posts ->
-            posts.let {
-                adapter.setData(posts)
-                hideProgress()
-                showPosts()
-            }
-        })
     }
 
     private fun showPosts() {
@@ -109,7 +112,7 @@ class TimelineFragment : Fragment() {
         val extras = FragmentNavigatorExtras(
             imageView to "thumbnail"
         )
-        var bundle = Bundle()
+        val bundle = Bundle()
         bundle.putParcelable(KEY_POST, postData)
         findNavController().navigate(R.id.action_timeline_to_detail, bundle, null, extras)
     }

@@ -27,7 +27,7 @@
 
         <include
                 android:id="@+id/state_progress_timeline"
-                layout="@layout/include_state_progress_timeline"/>
+                layout="@layout/include_state_progress_timeline" />
 
         <include
                 android:id="@+id/state_without_conn_timeline"
