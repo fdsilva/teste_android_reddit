@@ -14,23 +14,41 @@ class TimelineDataSource(private val scope: CoroutineScope)
 
     private var supervisorJob = SupervisorJob()
     private val networkState = MutableLiveData<NetworkState>()
+    private val initialLoadNetworkState = MutableLiveData<NetworkState>()
+    private val initialLoadHandler = CoroutineExceptionHandler { _, _ ->
+        initialLoadNetworkState.postValue(NetworkState.FAILED)
+    }
     private val handler = CoroutineExceptionHandler { _, _ ->
         networkState.postValue(NetworkState.FAILED)
     }
+    private var retry: (() -> Any)? = null
 
     override fun loadInitial(
         params: LoadInitialParams<String>,
         callback: LoadInitialCallback<PostData>
     ) {
-        getPostList("", params.requestedLoadSize) {
-            callback.onResult(it)
+        retry = {loadInitial(params, callback)}
+        initialLoadNetworkState.postValue(NetworkState.RUNNING)
+        scope.launch (initialLoadHandler + supervisorJob) {
+            val posts = PostRepository.getPosts("", params.requestedLoadSize)
+            initialLoadNetworkState.postValue(NetworkState.SUCCESS)
+            callback.onResult(posts)
         }
     }
 
     override fun loadAfter(params: LoadParams<String>, callback: LoadCallback<PostData>) {
-        getPostList(params.key, params.requestedLoadSize) {
-            callback.onResult(it)
+        retry = {loadAfter(params, callback)}
+        networkState.postValue(NetworkState.RUNNING)
+        scope.launch (handler + supervisorJob) {
+            val posts = PostRepository.getPosts(params.key, params.requestedLoadSize)
+            networkState.postValue(NetworkState.SUCCESS)
+            callback.onResult(posts)
         }
+    }
+
+    override fun invalidate() {
+        super.invalidate()
+        supervisorJob.cancelChildren()
     }
 
     override fun loadBefore(params: LoadParams<String>, callback: LoadCallback<PostData>) {}
@@ -39,16 +57,13 @@ class TimelineDataSource(private val scope: CoroutineScope)
         return item.name
     }
 
-    private fun getPostList(after: String, size: Int, callback: (List<PostData>) -> Unit) {
-        networkState.postValue(NetworkState.RUNNING)
-        scope.launch (handler + supervisorJob) {
-            val posts = PostRepository.getPosts(after, size)
-            networkState.postValue(NetworkState.SUCCESS)
-            callback(posts)
-        }
-    }
+    fun getInitialLoadNetworkState(): LiveData<NetworkState> = initialLoadNetworkState
 
     fun getNetworkState(): LiveData<NetworkState> = networkState
+
+    fun refreshAll() = this.invalidate()
+
+    fun doRetry() { retry?.invoke() }
 }
 
 class TimelineDataSourceFactory(
@@ -62,4 +77,6 @@ class TimelineDataSourceFactory(
         dataSourceLiveData.postValue(timelineDataSource)
        return timelineDataSource
     }
+
+    fun getSourceValue() = dataSourceLiveData.value
 }

@@ -26,20 +26,30 @@ class PostViewModel() : ViewModel() {
 
     var posts: LiveData<PagedList<PostData>>
 
-    init {
-        posts = LivePagedListBuilder(timelineDataSourceFactory, pagedListConfig).build()
-    }
-
-    fun verifyConnectionState() {
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        ioScope.coroutineContext.cancel()
+    val initialLoadState: LiveData<NetworkState> = switchMap(
+        timelineDataSourceFactory.dataSourceLiveData) {
+        it.getInitialLoadNetworkState()
     }
 
     val networkState: LiveData<NetworkState> = switchMap(
         timelineDataSourceFactory.dataSourceLiveData) {
         it.getNetworkState()
+    }
+
+    init {
+        posts = LivePagedListBuilder(timelineDataSourceFactory, pagedListConfig).build()
+    }
+
+    fun refreshList() {
+        timelineDataSourceFactory.getSourceValue()?.refreshAll()
+    }
+
+    fun retry() {
+        timelineDataSourceFactory.getSourceValue()?.doRetry()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        ioScope.coroutineContext.cancel()
     }
 }

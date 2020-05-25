@@ -48,12 +48,10 @@
                     android:id="@+id/state_progress_timeline"
                     layout="@layout/include_state_progress_timeline"
                     android:visibility="@{networkStatus == NetworkState.RUNNING ? View.VISIBLE : View.GONE}"/>
-
             <include
                     android:id="@+id/state_without_conn_timeline"
                     layout="@layout/include_state_without_conn_timeline"
                     android:visibility="@{networkStatus == NetworkState.FAILED ? View.VISIBLE : View.GONE}" />
-
         </LinearLayout>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>

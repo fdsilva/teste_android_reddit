@@ -41,15 +41,22 @@ class TimelineFragment : Fragment() {
         buildActionBar()
         buildTimeline()
         setupObservables()
+        setupClickListeners()
+    }
+
+    private fun setupClickListeners() {
         state_without_conn_timeline.setOnClickListener {
-            viewModel.verifyConnectionState()
+            viewModel.refreshList()
         }
     }
 
     private fun setupObservables() {
         with(viewModel) {
-            networkState.observe(viewLifecycleOwner, Observer {
+            initialLoadState.observe(viewLifecycleOwner, Observer {
                 binding.networkStatus = it
+            })
+            networkState.observe(viewLifecycleOwner, Observer {
+                adapter.setNetworkState(it)
             })
             posts.observe(viewLifecycleOwner, Observer<PagedList<PostData>> {
                 adapter.submitList(it)
@@ -65,9 +72,10 @@ class TimelineFragment : Fragment() {
     }
 
     private fun buildTimeline() {
-        adapter = TimelineAdapter { it, imageView ->
-            onClickItem(it, imageView)
-        }
+        adapter = TimelineAdapter(
+            { viewModel.retry() },
+            { it, imageView -> onClickItem(it, imageView) }
+        )
 
         timeline_rv.layoutManager = LinearLayoutManager(context)
         timeline_rv.itemAnimator = DefaultItemAnimator()

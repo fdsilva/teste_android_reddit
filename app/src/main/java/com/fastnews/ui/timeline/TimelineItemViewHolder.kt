@@ -3,9 +3,12 @@ package com.fastnews.ui.timeline
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.text.TextUtils
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.fastnews.R
 import com.fastnews.mechanism.TimeElapsed
 import com.fastnews.service.model.PostData
 import kotlinx.android.synthetic.main.include_item_timeline_ic_comments.view.*
@@ -75,4 +78,11 @@ class TimelineItemViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         }
     }
 
+    companion object {
+        fun create(parent: ViewGroup) : TimelineItemViewHolder {
+            val layoutInflater = LayoutInflater.from(parent.context)
+            val view = layoutInflater.inflate(R.layout.item_timeline, parent, false)
+            return TimelineItemViewHolder(view)
+        }
+    }
 }
