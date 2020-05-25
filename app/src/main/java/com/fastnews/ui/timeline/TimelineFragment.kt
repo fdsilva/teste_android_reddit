@@ -10,51 +10,57 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
+import androidx.paging.PagedList
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.fastnews.R
-import com.fastnews.mechanism.VerifyNetworkInfo
+import com.fastnews.databinding.FragmentTimelineBinding
 import com.fastnews.service.model.PostData
 import com.fastnews.ui.detail.DetailFragment.Companion.KEY_POST
 import com.fastnews.viewmodel.PostViewModel
 import kotlinx.android.synthetic.main.fragment_timeline.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-
 class TimelineFragment : Fragment() {
     private val viewModel by viewModel<PostViewModel>()
     private lateinit var adapter: TimelineAdapter
+    private lateinit var binding: FragmentTimelineBinding
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_timeline, container, false)
-    }
+    ) = FragmentTimelineBinding.inflate(inflater).apply {
+        binding = this
+        binding.lifecycleOwner = viewLifecycleOwner
+    }.root
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         buildActionBar()
         buildTimeline()
-        verifyConnectionState()
+        setupObservables()
+        setupClickListeners()
     }
 
-    private fun verifyConnectionState() {
-        context.let {
-            if (VerifyNetworkInfo.isConnected(it!!)) {
-                hideNoConnectionState()
-                showProgress()
-                fetchTimeline()
-            } else {
-                hideProgress()
-                showNoConnectionState()
+    private fun setupClickListeners() {
+        state_without_conn_timeline.setOnClickListener {
+            viewModel.refreshList()
+        }
+    }
 
-                state_without_conn_timeline.setOnClickListener {
-                    verifyConnectionState()
-                }
-            }
+    private fun setupObservables() {
+        with(viewModel) {
+            initialLoadState.observe(viewLifecycleOwner, Observer {
+                binding.networkStatus = it
+            })
+            networkState.observe(viewLifecycleOwner, Observer {
+                adapter.setNetworkState(it)
+            })
+            posts.observe(viewLifecycleOwner, Observer<PagedList<PostData>> {
+                adapter.submitList(it)
+            })
         }
     }
 
@@ -66,50 +72,21 @@ class TimelineFragment : Fragment() {
     }
 
     private fun buildTimeline() {
-        adapter = TimelineAdapter { it, imageView ->
-            onClickItem(it, imageView)
-        }
+        adapter = TimelineAdapter(
+            { viewModel.retry() },
+            { it, imageView -> onClickItem(it, imageView) }
+        )
 
         timeline_rv.layoutManager = LinearLayoutManager(context)
         timeline_rv.itemAnimator = DefaultItemAnimator()
         timeline_rv.adapter = adapter
     }
 
-    private fun fetchTimeline() {
-        viewModel.getPosts("", 2).observe(this, Observer<List<PostData>> { posts ->
-            posts.let {
-                adapter.setData(posts)
-                hideProgress()
-                showPosts()
-            }
-        })
-    }
-
-    private fun showPosts() {
-        timeline_rv.visibility = View.VISIBLE
-    }
-
-    private fun showProgress() {
-        state_progress_timeline.visibility = View.VISIBLE
-    }
-
-    private fun hideProgress() {
-        state_progress_timeline.visibility = View.GONE
-    }
-
-    private fun showNoConnectionState() {
-        state_without_conn_timeline.visibility = View.VISIBLE
-    }
-
-    private fun hideNoConnectionState() {
-        state_without_conn_timeline.visibility = View.GONE
-    }
-
     private fun onClickItem(postData: PostData, imageView: ImageView) {
         val extras = FragmentNavigatorExtras(
             imageView to "thumbnail"
         )
-        var bundle = Bundle()
+        val bundle = Bundle()
         bundle.putParcelable(KEY_POST, postData)
         findNavController().navigate(R.id.action_timeline_to_detail, bundle, null, extras)
     }

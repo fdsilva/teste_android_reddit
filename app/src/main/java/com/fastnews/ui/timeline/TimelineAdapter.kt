@@ -1,36 +1,90 @@
 package com.fastnews.ui.timeline
 
-import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.paging.PagedListAdapter
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.fastnews.R
+import com.fastnews.service.NetworkState
 import com.fastnews.service.model.PostData
 import kotlinx.android.synthetic.main.include_item_timeline_thumbnail.view.*
+import java.lang.IllegalArgumentException
 
-class TimelineAdapter(val onClickItem: (PostData, ImageView) -> Unit) : RecyclerView.Adapter<TimelineItemViewHolder>() {
+class TimelineAdapter(private val retryCallback: () -> Unit, val onClickItem: (PostData, ImageView) -> Unit) :
+    PagedListAdapter<PostData, RecyclerView.ViewHolder>(PostDiffUtilCallback) {
 
-    var items: List<PostData> = emptyList()
+    private var networkState: NetworkState? = null
 
-    fun setData(items: List<PostData>) {
-        this.items = items
-        notifyDataSetChanged()
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when(viewType) {
+            R.layout.item_timeline -> TimelineItemViewHolder.create(parent)
+            R.layout.item_network_state -> NetworkStateViewHolder.create(parent, retryCallback)
+            else -> throw IllegalArgumentException("")
+        }
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (getItemViewType(position)) {
+            R.layout.item_timeline -> {
+                (holder as TimelineItemViewHolder).data = getItem(position)
+                holder.view.setOnClickListener{
+                    getItem(position).let { data ->
+                        data?.let { it1 -> onClickItem(it1, holder.view.item_timeline_thumbnail) }
+                    }
+                }
+            }
+            R.layout.item_network_state -> networkState?.let {
+                (holder as NetworkStateViewHolder).bindTo(
+                    it
+                )
+            }
+        }
+    }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TimelineItemViewHolder
-            = TimelineItemViewHolder(
-        LayoutInflater.from(parent.context).inflate(
-            R.layout.item_timeline,
-            parent,
-            false
-        )
-    )
+    private fun hasExtraRow() = networkState != null && networkState != NetworkState.SUCCESS
 
+    override fun getItemViewType(position: Int): Int {
+        return if (hasExtraRow() && position == itemCount - 1) {
+            R.layout.item_network_state
+        } else {
+            R.layout.item_timeline
+        }
+    }
 
-    override fun onBindViewHolder(holder: TimelineItemViewHolder, position: Int) {
-        holder.data = items[position]
-        holder.view.setOnClickListener { onClickItem(items[position], holder.view.item_timeline_thumbnail) }
+    override fun getItemCount(): Int {
+        return super.getItemCount() + if (hasExtraRow()) 1 else 0
+    }
+
+    fun setNetworkState(newNetworkState: NetworkState?) {
+        if (currentList != null) {
+            if (currentList!!.size != 0) {
+                val previousState = this.networkState
+                val hadExtraRow = hasExtraRow()
+                this.networkState = newNetworkState
+                val hasExtraRow = hasExtraRow()
+                if (hadExtraRow != hasExtraRow) {
+                    if (hadExtraRow) {
+                        notifyItemRemoved(super.getItemCount())
+                    } else {
+                        notifyItemInserted(super.getItemCount())
+                    }
+                } else if (hasExtraRow && previousState !== newNetworkState) {
+                    notifyItemChanged(itemCount - 1)
+                }
+            }
+        }
+    }
+    
+    companion object {
+        val PostDiffUtilCallback = object : DiffUtil.ItemCallback<PostData>() {
+            override fun areItemsTheSame(oldItem: PostData, newItem: PostData): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+            override fun areContentsTheSame(oldItem: PostData, newItem: PostData): Boolean {
+                return oldItem == newItem
+            }
+        }
     }
 }

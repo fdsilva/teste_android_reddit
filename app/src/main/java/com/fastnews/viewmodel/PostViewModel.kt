@@ -1,27 +1,55 @@
 package com.fastnews.viewmodel
 
-import androidx.annotation.UiThread
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations.switchMap
 import androidx.lifecycle.ViewModel
-import com.fastnews.mechanism.Coroutines
-import com.fastnews.repository.PostRepository
+import androidx.lifecycle.viewModelScope
+import androidx.paging.LivePagedListBuilder
+import androidx.paging.PagedList
+import com.fastnews.datasource.TimelineDataSourceFactory
+import com.fastnews.service.NetworkState
 import com.fastnews.service.model.PostData
+import kotlinx.coroutines.cancel
+
+private const val pageSize = 10
 
 class PostViewModel() : ViewModel() {
-    private lateinit var posts: MutableLiveData<List<PostData>>
+    private val ioScope = viewModelScope
+    private val timelineDataSourceFactory by lazy { TimelineDataSourceFactory(scope = ioScope) }
+    private val pagedListConfig by lazy {
+        PagedList.Config.Builder()
+            .setPageSize(pageSize)
+            .setInitialLoadSizeHint(pageSize * 2)
+            .setEnablePlaceholders(false)
+            .build()
+    }
 
-    @UiThread
-    fun getPosts(after: String, limit: Int): LiveData<List<PostData>> {
-            if (!::posts.isInitialized) {
-                posts = MutableLiveData()
+    var posts: LiveData<PagedList<PostData>>
 
-                Coroutines.ioThenMain({
-                    PostRepository.getPosts(after, limit)
-                }) {
-                    posts.postValue(it)
-                }
-            }
-        return posts
+    val initialLoadState: LiveData<NetworkState> = switchMap(
+        timelineDataSourceFactory.dataSourceLiveData) {
+        it.getInitialLoadNetworkState()
+    }
+
+    val networkState: LiveData<NetworkState> = switchMap(
+        timelineDataSourceFactory.dataSourceLiveData) {
+        it.getNetworkState()
+    }
+
+    init {
+        posts = LivePagedListBuilder(timelineDataSourceFactory, pagedListConfig).build()
+    }
+
+    fun refreshList() {
+        timelineDataSourceFactory.getSourceValue()?.refreshAll()
+    }
+
+    fun retry() {
+        timelineDataSourceFactory.getSourceValue()?.doRetry()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        ioScope.coroutineContext.cancel()
     }
 }

@@ -5,7 +5,9 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
-
+    dataBinding {
+        enabled true
+    }
     // Keys for buildConfigFields
     def API_ENDPOINT = "API_ENDPOINT"
     def API_ENDPOINT_REDDIT = '"https://www.reddit.com/r/Android/"'
@@ -145,5 +147,8 @@ dependencies {
     implementation "org.koin:koin-androidx-scope:$koin_version"
     implementation "org.koin:koin-androidx-viewmodel:$koin_version"
     implementation "org.koin:koin-androidx-fragment:$koin_version"
+
+    //Paging
+    implementation "androidx.paging:paging-runtime:$paging_version"
 
 }

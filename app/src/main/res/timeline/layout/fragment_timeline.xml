@@ -1,39 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/bottomsheet"
-        android:background="@color/light_gray"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".ui.timeline.TimelineFragment">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools">
 
-    <LinearLayout
+    <data>
+        <import type="android.view.View" />
+        <import type="com.fastnews.service.NetworkState" />
+        <import type="androidx.lifecycle.LiveData" />
+
+        <variable
+                name="handlers"
+                type="com.fastnews.ui.timeline.TimelineFragment" />
+
+        <variable
+            name="viewModel"
+            type="com.fastnews.viewmodel.PostViewModel" />
+
+        <variable
+                name="networkStatus"
+                type="NetworkState" />
+        </data>
+
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+            android:id="@+id/bottomsheet"
+            android:background="@color/light_gray"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical">
+            tools:context=".ui.timeline.TimelineFragment">
 
-        <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/timeline_rv"
+        <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:cacheColorHint="@android:color/transparent"
-                android:clipToPadding="false"
-                android:divider="@color/transparent"
-                android:listSelector="@android:color/transparent"
-                android:scrollbars="none"
-                android:visibility="gone"
-                tools:listitem="@layout/item_timeline"/>
+                android:orientation="vertical">
 
-        <include
-                android:id="@+id/state_progress_timeline"
-                layout="@layout/include_state_progress_timeline"/>
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/timeline_rv"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:cacheColorHint="@android:color/transparent"
+                    android:clipToPadding="false"
+                    android:divider="@color/transparent"
+                    android:listSelector="@android:color/transparent"
+                    android:scrollbars="none"
+                    android:visibility="@{networkStatus == NetworkState.SUCCESS ? View.VISIBLE : View.GONE}"
+                    tools:listitem="@layout/item_timeline" />
 
-        <include
-                android:id="@+id/state_without_conn_timeline"
-                layout="@layout/include_state_without_conn_timeline"
-                android:visibility="gone"/>
+            <include
+                    android:id="@+id/state_progress_timeline"
+                    layout="@layout/include_state_progress_timeline"
+                    android:visibility="@{networkStatus == NetworkState.RUNNING ? View.VISIBLE : View.GONE}"/>
+            <include
+                    android:id="@+id/state_without_conn_timeline"
+                    layout="@layout/include_state_without_conn_timeline"
+                    android:visibility="@{networkStatus == NetworkState.FAILED ? View.VISIBLE : View.GONE}" />
+        </LinearLayout>
 
-    </LinearLayout>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+</layout>
