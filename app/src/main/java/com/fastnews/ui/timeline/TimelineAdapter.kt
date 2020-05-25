@@ -6,11 +6,14 @@ import android.widget.ImageView
 import androidx.paging.PagedListAdapter
 import androidx.recyclerview.widget.DiffUtil
 import com.fastnews.R
+import com.fastnews.service.NetworkState
 import com.fastnews.service.model.PostData
 import kotlinx.android.synthetic.main.include_item_timeline_thumbnail.view.*
 
 class TimelineAdapter(val onClickItem: (PostData, ImageView) -> Unit) :
     PagedListAdapter<PostData, TimelineItemViewHolder>(PostDiffUtilCallback) {
+
+    private var networkState: NetworkState? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TimelineItemViewHolder
             = TimelineItemViewHolder(
@@ -28,6 +31,13 @@ class TimelineAdapter(val onClickItem: (PostData, ImageView) -> Unit) :
             }
         }
     }
+
+//    override fun getItemCount(): Int {
+//        this.onClickItem.whenListIsUpdated(super.getItemCount(), this.networkState)
+//        return super.getItemCount()
+//    }
+
+    private fun hasExtraRow() = networkState != null && networkState != NetworkState.SUCCESS
 
     companion object {
         val PostDiffUtilCallback = object : DiffUtil.ItemCallback<PostData>() {
