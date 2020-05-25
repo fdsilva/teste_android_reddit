@@ -6,6 +6,7 @@ import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.text.HtmlCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.fastnews.R
@@ -48,20 +49,23 @@ class TimelineItemViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
     }
 
     private fun populateThumbnail(value: PostData?) {
-        value?.thumbnail.let {
-
-            val PREFIX_HTTP = "http"
-
-            if (!TextUtils.isEmpty(it) && it!!.startsWith(PREFIX_HTTP)) {
-                Glide.with(view.item_timeline_thumbnail.context)
-                    .load(it)
-                    .placeholder(ColorDrawable(Color.LTGRAY))
-                    .error(ColorDrawable(Color.DKGRAY))
-                    .into(view.item_timeline_thumbnail)
-                view.item_timeline_thumbnail.visibility = View.VISIBLE
-            } else {
-                view.item_timeline_thumbnail.visibility = View.GONE
+        var imageURL = ""
+        if (value?.preview != null) {
+            value.preview.images.map {
+                if (!TextUtils.isEmpty(it.source.url)) {
+                    imageURL = HtmlCompat.fromHtml(it.source.url, HtmlCompat.FROM_HTML_MODE_LEGACY).toString()
+                }
             }
+        }
+        if (!TextUtils.isEmpty(imageURL)) {
+            Glide.with(view.item_timeline_thumbnail.context)
+                .load(imageURL)
+                .placeholder(R.drawable.ic_placeholder)
+                .error(ColorDrawable(Color.DKGRAY))
+                .into(view.item_timeline_thumbnail)
+            view.item_timeline_thumbnail.visibility = View.VISIBLE
+        } else {
+            view.item_timeline_thumbnail.visibility = View.GONE
         }
     }
 

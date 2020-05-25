@@ -1,13 +1,16 @@
 package com.fastnews.ui.detail
 
 import android.os.Bundle
+import android.text.Html
 import android.text.TextUtils
 import android.transition.TransitionInflater
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.text.HtmlCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
@@ -26,11 +29,12 @@ import kotlinx.android.synthetic.main.include_detail_post_title.*
 import kotlinx.android.synthetic.main.include_item_timeline_ic_score.*
 import kotlinx.android.synthetic.main.include_item_timeline_timeleft.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.net.URLDecoder
 
 class DetailFragment : Fragment() {
 
     companion object {
-        val KEY_POST = "KEY_POST"
+        const val KEY_POST = "KEY_POST"
     }
 
     private var post: PostData? = null
@@ -92,13 +96,16 @@ class DetailFragment : Fragment() {
 
     private fun fetchComments() {
             post.let {
-                commentViewModel.getComments(postId = post!!.id).observe(this, Observer<List<CommentData>> { comments ->
-                    comments.let {
-                        populateComments(comments)
-                        hideStateProgress()
-                        showComments()
-                    }
-                })
+                post?.id?.let { it1 ->
+                    commentViewModel.getComments(postId = it1)
+                        .observe(viewLifecycleOwner, Observer<List<CommentData>> { comments ->
+                        comments.let {
+                            populateComments(comments)
+                            hideStateProgress()
+                            showComments()
+                        }
+                    })
+                }
             }
     }
 
@@ -108,7 +115,7 @@ class DetailFragment : Fragment() {
                 detail_post_comments.removeAllViews()
 
                 for (comment in comments) {
-                    val itemReview = CommentItem.newInstance(activity!!, comment)
+                    val itemReview = CommentItem.newInstance(requireActivity(), comment)
                     detail_post_comments.addView(itemReview)
                 }
             })
@@ -157,20 +164,13 @@ class DetailFragment : Fragment() {
     }
 
     private fun populateThumbnail() {
-        val PREFIX_HTTP = "http"
         var thumbnailUrl = ""
-
-        // TODO Fix high quality images
-        /*if(post?.preview != null) {
+        if(post?.preview != null) {
             post?.preview?.images?.map {
                 if (!TextUtils.isEmpty(it.source.url)) {
-                    thumbnailUrl = it.source.url
+                    thumbnailUrl = HtmlCompat.fromHtml(it.source.url, HtmlCompat.FROM_HTML_MODE_LEGACY).toString()
                 }
             }
-        }*/
-
-        if (!TextUtils.isEmpty(post?.thumbnail) && post?.thumbnail!!.startsWith(PREFIX_HTTP)) {
-            thumbnailUrl = post!!.thumbnail
         }
 
         if (!TextUtils.isEmpty(thumbnailUrl)) {
@@ -186,7 +186,7 @@ class DetailFragment : Fragment() {
         item_detail_post_thumbnail.setOnClickListener {
             if(!post?.url.isNullOrEmpty()) {
                 context.let {
-                    val customTabsWeb = CustomTabsWeb(context!!, post?.url!!)
+                    val customTabsWeb = CustomTabsWeb(requireContext(), post?.url!!)
                     customTabsWeb.openUrlWithCustomTabs()
                 }
             } else {
