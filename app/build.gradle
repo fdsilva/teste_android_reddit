@@ -5,9 +5,23 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
+    testOptions.unitTests.includeAndroidResources = true
+    useLibrary 'android.test.runner'
+    useLibrary 'android.test.base'
+    useLibrary 'android.test.mock'
+
     dataBinding {
         enabled true
     }
+
+    testOptions {
+        unitTests {
+            returnDefaultValues = true
+            includeAndroidResources = true
+
+        }
+    }
+
     // Keys for buildConfigFields
     def API_ENDPOINT = "API_ENDPOINT"
     def API_ENDPOINT_REDDIT = '"https://www.reddit.com/r/Android/"'
@@ -98,9 +112,14 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-beta2'
 
     // Test
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    testImplementation 'androidx.arch.core:core-testing:2.1.0'
+    testImplementation 'org.robolectric:robolectric:4.3'
+    testImplementation 'io.mockk:mockk:1.10.0'
+    androidTestImplementation "io.mockk:mockk-android:1.10.0"
 
     // Kotlin coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$rootProject.coroutinesVersion"

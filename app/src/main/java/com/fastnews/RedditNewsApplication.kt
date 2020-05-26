@@ -1,6 +1,7 @@
 package com.fastnews
 
 import android.app.Application
+import com.fastnews.di.verifyNetworkInfoModule
 import com.fastnews.di.viewModelModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -14,7 +15,7 @@ class RedditNewsApplication : Application() {
     private fun setupDi(){
         startKoin {
             androidContext(this@RedditNewsApplication)
-                .modules(listOf(viewModelModule))
+                .modules(listOf(viewModelModule, verifyNetworkInfoModule))
         }
     }
 }

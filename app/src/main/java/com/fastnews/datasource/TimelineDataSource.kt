@@ -15,20 +15,19 @@ class TimelineDataSource(private val scope: CoroutineScope)
     private var supervisorJob = SupervisorJob()
     private val networkState = MutableLiveData<NetworkState>()
     private val initialLoadNetworkState = MutableLiveData<NetworkState>()
+
     private val initialLoadHandler = CoroutineExceptionHandler { _, _ ->
-        initialLoadNetworkState.postValue(NetworkState.FAILED)
-    }
+        initialLoadNetworkState.postValue(NetworkState.FAILED) }
+
     private val handler = CoroutineExceptionHandler { _, _ ->
-        networkState.postValue(NetworkState.FAILED)
-    }
+        networkState.postValue(NetworkState.FAILED) }
+
     private var retry: (() -> Any)? = null
 
-    override fun loadInitial(
-        params: LoadInitialParams<String>,
-        callback: LoadInitialCallback<PostData>
-    ) {
+    override fun loadInitial(params: LoadInitialParams<String>, callback: LoadInitialCallback<PostData>) {
         retry = {loadInitial(params, callback)}
         initialLoadNetworkState.postValue(NetworkState.RUNNING)
+
         scope.launch (initialLoadHandler + supervisorJob) {
             val posts = PostRepository.getPosts("", params.requestedLoadSize)
             initialLoadNetworkState.postValue(NetworkState.SUCCESS)
@@ -39,6 +38,7 @@ class TimelineDataSource(private val scope: CoroutineScope)
     override fun loadAfter(params: LoadParams<String>, callback: LoadCallback<PostData>) {
         retry = {loadAfter(params, callback)}
         networkState.postValue(NetworkState.RUNNING)
+
         scope.launch (handler + supervisorJob) {
             val posts = PostRepository.getPosts(params.key, params.requestedLoadSize)
             networkState.postValue(NetworkState.SUCCESS)
