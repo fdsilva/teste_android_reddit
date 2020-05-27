@@ -30,9 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:layout_marginTop="8dp"
-            android:orientation="horizontal"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp">
+            android:orientation="horizontal">
 
             <include layout="@layout/include_header_detail_post_comments" />
 
@@ -42,6 +40,13 @@
                 android:background="@color/light_gray" />
 
             <include layout="@layout/include_item_timeline_ic_score" />
+
+            <View
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:background="@color/light_gray" />
+
+            <include layout="@layout/include_header_detail_post_share"/>
 
         </LinearLayout>
 

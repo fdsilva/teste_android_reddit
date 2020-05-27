@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:id="@+id/item_timeline_bt_share"
+        tools:showIn="@layout/fragment_detail_post"
+        android:focusable="true">
+
+    <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_share" />
+
+    <com.fastnews.mechanism.FontTextView
+            app:textFont="@string/font_roboto_light"
+            style="@style/Font12sp.GrayText"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="8dp"
+            android:gravity="left|center"
+            android:text="@string/item_timeline_share_title" />
+
+</LinearLayout>

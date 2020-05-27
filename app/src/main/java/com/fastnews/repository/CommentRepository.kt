@@ -5,7 +5,7 @@ import com.fastnews.service.model.CommentData
 
 object CommentRepository : BaseRepository() {
 
-    const val PREFIX_COMMENT = "t1"
+    private const val PREFIX_COMMENT = "t1"
 
     suspend fun getComments(postId: String): List<CommentData> {
 
@@ -26,5 +26,4 @@ object CommentRepository : BaseRepository() {
         return result
 
     }
-
 }
